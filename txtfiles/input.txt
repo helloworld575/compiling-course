@@ -1,4 +1,4 @@
-begi
+begin
     float &f = 1e-1;
     int &j;
     bool &bool = true;
@@ -6,5 +6,6 @@ begi
     while(&j<&n){
         &f = &f * 2;
     }
+    string &s = "helloworld
     output(&f);
 end

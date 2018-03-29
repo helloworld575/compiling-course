@@ -1,12 +1,13 @@
 import java.io.*;
 
 class Scan {
-    private BufferedReader input_br;
+    private BufferedReader inputBr;
     private int line = 1;
-    private int now_char;
+    private int nowChar;
     private Tokens tokens = new Tokens();
-    private String error_msg = "";
-    private int ex_code = 0;
+    private String errorMsg = "";
+    private int errorCode = 0;          //1:程序范围出现错误 2:程序字符出现错误 3:程序数字出现错误 4:无法识别字符 5:关键字错误 6:多行字符串错误
+    private int exCode = -1;            //0:程序开始 1:程序正常结束 2:程序异常结束 -1:程序未开始
     private static String inputFileName = "F:\\important\\bianyiyuanli\\txtfiles\\input.txt";
     private static String outputFileName = "F:\\important\\bianyiyuanli\\txtfiles\\output.txt";
     private static String digitDFA[] = {
@@ -20,18 +21,45 @@ class Scan {
     };
     void readTxt() throws IOException {
         FileReader inputFile = new FileReader(inputFileName);
-        input_br = new BufferedReader(inputFile);
-        now_char = input_br.read();
-        while (now_char != -1 && ex_code == 0) {
-            charSort((char) now_char);
-            if(ex_code!=0){
+        inputBr = new BufferedReader(inputFile);
+        exCode = programStart();
+        nowChar = inputBr.read();
+        if(nowChar==-1){
+            exCode = 1;
+            errorCode = 1;
+            errorMsg = errorMsg+"程序未找到！\n";
+            PrintError();
+            inputBr.close();
+            inputFile.close();
+            return;
+        }
+        while (nowChar != -1 && exCode == 0) {
+            charSort((char) nowChar);
+            if(exCode==2){
+                System.out.println("程序异常结束！");
                 PrintError();
             }
+            if(exCode==1){
+                System.out.println("程序正常结束");
+            }
         }
-        input_br.close();
+        if(exCode==0){
+            errorCode = 1;
+            errorMsg = errorMsg+"程序未正常结束，请在程序尾添加end结束程序,错误码："+errorCode+"\n";
+            PrintError();
+        }
+        inputBr.close();
         inputFile.close();
     }
-
+    private int programStart() throws IOException {
+        String word;
+        while((word = inputBr.readLine())!=null){
+            if(word.equals("begin")){
+                return 0;
+            }
+        }
+        return -1;
+    }
     private void charSort(char a) throws IOException {
         if (a == '&')
             recordID(a);
@@ -67,27 +95,28 @@ class Scan {
             judgeAndRecord(a);
         else if (a == '!')
             judgeAndRecord(a);
-        else if (now_char == 32 || a == '\t'||now_char==13) {
-            now_char = input_br.read();
+        else if (nowChar == 32 || a == '\t'||nowChar==13) {
+            nowChar = inputBr.read();
         } else if (a == '\n') {
-            now_char = input_br.read();
+            nowChar = inputBr.read();
             line++;
         } else if (Character.isLetter(a)) {
             recordKeyword(a);
         } else {
-            ex_code = 1;
-            error_msg = error_msg + "第" + line + "行字符发生错误\n出错码：0\n";
+            exCode = 2;
+            errorCode = 3;
+            errorMsg = errorMsg + "第" + line + "行字符无法识别\n出错码："+errorCode+"\n";
         }
     }
 
     private void recordID(char a) throws IOException {
         String word = "" + a;
-        now_char = input_br.read();
-        char tmpA = (char) now_char;
-        while ((now_char >= 48 && now_char <= 57) || (now_char >= 65 && now_char <= 90) || (now_char >= 97 && now_char <= 122)) {
+        nowChar = inputBr.read();
+        char tmpA = (char) nowChar;
+        while ((nowChar >= 48 && nowChar <= 57) || (nowChar >= 65 && nowChar <= 90) || (nowChar >= 97 && nowChar <= 122)) {
             word = word + tmpA;
-            now_char = input_br.read();
-            tmpA = (char) now_char;
+            nowChar = inputBr.read();
+            tmpA = (char) nowChar;
         }
         Token tmpT = new Token(1, word);
         tokens.tokenArray.add(tmpT);
@@ -99,19 +128,20 @@ class Scan {
     private void recordNum(char a) throws IOException {
         int isFloat = 0;
         String word = "" + a;
-        now_char = input_br.read();
-        char tmpA = (char) now_char;
+        nowChar = inputBr.read();
+        char tmpA = (char) nowChar;
         int state = 1;
         while (Character.isDigit(tmpA) || tmpA == '+' || tmpA == '-' || tmpA == 'e' || tmpA == 'E' || tmpA == '.') {
             state = getDigitNum(tmpA, state);
             if(tmpA=='.' || tmpA == 'e')
                 isFloat = 1;
             word = word + tmpA;
-            now_char = input_br.read();
-            tmpA = (char) now_char;
+            nowChar = inputBr.read();
+            tmpA = (char) nowChar;
             if (state == -1) {
-                ex_code = 1;
-                error_msg = error_msg + "第" + line + "行数字发生错误\n出错码：1\n";
+                exCode = 2;
+                errorCode = 2;
+                errorMsg = errorMsg + "第" + line + "行数字发生错误\n出错码："+errorCode+"\n";
                 break;
             }
         }
@@ -126,8 +156,9 @@ class Scan {
             }
         }
         else{
-            ex_code = 1;
-            error_msg = error_msg+ "第" + line + "行数字发生错误\n出错码：2\n";
+            exCode = 2;
+            errorCode = 2;
+            errorMsg = errorMsg+ "第" + line + "行数字发生错误\n出错码："+errorCode+"\n";
         }
     }
 
@@ -147,14 +178,19 @@ class Scan {
 
     private void recordString(char b) throws IOException {
         String word = "";
-        while ((now_char = input_br.read()) != b) {
-            if(Character.isLetterOrDigit((char)now_char)){
-                word = word+(char)now_char;
+        while ((nowChar = inputBr.read()) != b) {
+            if((char)nowChar!='\n'){
+                word = word+(char)nowChar;
             }
-            else
-                break;
+            else{
+                line+=1;
+                exCode = 2;
+                errorCode = 6;
+                errorMsg = errorMsg+ "第" + line + "行字符串未正常结束\n出错码："+errorCode+"\n";
+                return;
+            }
         }
-        now_char = input_br.read();
+        nowChar = inputBr.read();
         Token tmpT = new Token(5, word);
         tokens.tokenArray.add(tmpT);
     }
@@ -163,16 +199,16 @@ class Scan {
         String word = ""+a;
         Token tmpT = new Token(n, word);
         tokens.tokenArray.add(tmpT);
-        now_char = input_br.read();
+        nowChar = inputBr.read();
     }
 
     private void judgeAndRecord(char a) throws IOException {
-        now_char = input_br.read();
+        nowChar = inputBr.read();
         if(a=='>'){
-            if((char)now_char=='='){
+            if((char)nowChar=='='){
                 Token tmpT = new Token(34, ">=");
                 tokens.tokenArray.add(tmpT);
-                now_char = input_br.read();
+                nowChar = inputBr.read();
             }
             else{
                 Token tmpT = new Token(25, ">");
@@ -180,10 +216,10 @@ class Scan {
             }
         }
         if(a=='<'){
-            if((char)now_char=='='){
+            if((char)nowChar=='='){
                 Token tmpT = new Token(35, "<=");
                 tokens.tokenArray.add(tmpT);
-                now_char = input_br.read();
+                nowChar = inputBr.read();
             }
             else{
                 Token tmpT = new Token(26, "<");
@@ -191,10 +227,10 @@ class Scan {
             }
         }
         if(a=='='){
-            if((char)now_char=='='){
+            if((char)nowChar=='='){
                 Token tmpT = new Token(32, "==");
                 tokens.tokenArray.add(tmpT);
-                now_char = input_br.read();
+                nowChar = inputBr.read();
             }
             else{
                 Token tmpT = new Token(31, "=");
@@ -202,44 +238,50 @@ class Scan {
             }
         }
         if(a=='!') {
-            if ((char) now_char == '=') {
+            if ((char) nowChar == '=') {
                 Token tmpT = new Token(33, "!=");
                 tokens.tokenArray.add(tmpT);
-                now_char = input_br.read();
+                nowChar = inputBr.read();
             } else {
-                ex_code = 1;
-                error_msg = error_msg + "第" + line + "行语法错误\n出错码：3\n";
+                errorCode = 3;
+                exCode = 2;
+                errorMsg = errorMsg + "第" + line + "行无法识别字符！\n出错码："+errorCode+"\n";
             }
         }
     }
 
     private void recordCom(char a) throws IOException {
-        while((char)now_char!='\n'){
-            if(now_char==-1){
-                ex_code = 2;
+        while((char)nowChar!='\n'){
+            if(nowChar==-1){
+                exCode = 2;
                 return;
             }
-            now_char = input_br.read();
+            nowChar = inputBr.read();
         }
         line++;
-        now_char = input_br.read();
+        nowChar = inputBr.read();
     }
 
     private void recordKeyword(char a) throws IOException {
         String word = "";
-        while(Character.isLetter(now_char)){
-            word = word+(char)now_char;
-            now_char = input_br.read();
+        while(Character.isLetter(nowChar)){
+            word = word+(char)nowChar;
+            nowChar = inputBr.read();
         }
         int n = tokens.findKeyWords(word);
+        if(n==18){
+            exCode=1;
+            return;
+        }
         if(n==-1){
             if(word.equals("true")||word.equals("false")){
                 Token tmpT = new Token(4, word);
                 tokens.tokenArray.add(tmpT);
             }
             else{
-                ex_code = 1;
-                error_msg = error_msg+"第"+line+"行语法错误\n出错码：4\n";
+                exCode = 2;
+                errorCode = 5;
+                errorMsg = errorMsg+"第"+line+"行语法错误\n出错码："+errorCode+"\n";
             }
         }
         else{
@@ -250,8 +292,8 @@ class Scan {
 
     private void PrintError() {
         System.out.println("程序编译出错！");
-        System.out.println(error_msg);
-        System.out.println("出错字符码："+now_char+"\n");
+        System.out.println(errorMsg);
+        System.out.println("出错字符码："+nowChar+"\n");
     }
 
     void outPut() throws FileNotFoundException {
@@ -274,5 +316,4 @@ class Scan {
         System.out.println("===========字符集输出结束=============");
         p.println("=====================字符集结束=====================");
     }
-
 }
