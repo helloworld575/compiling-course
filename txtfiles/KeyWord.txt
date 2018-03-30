@@ -1,0 +1,14 @@
+int	6
+float	7
+bool	8
+string	9
+while	10
+if	11
+input	12
+output	13
+not	14
+or	15
+and	16
+else	17
+begin	18
+end	19

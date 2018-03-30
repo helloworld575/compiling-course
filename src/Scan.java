@@ -4,12 +4,13 @@ class Scan {
     private BufferedReader inputBr;
     private int line = 1;
     private int nowChar;
-    private Tokens tokens = new Tokens();
     private String errorMsg = "";
     private int errorCode = 0;          //1:程序范围出现错误 2:程序字符出现错误 3:程序数字出现错误 4:无法识别字符 5:关键字错误 6:多行字符串错误
     private int exCode = -1;            //0:程序开始 1:程序正常结束 2:程序异常结束 -1:程序未开始
-    private static String inputFileName = "F:\\important\\bianyiyuanli\\txtfiles\\input.txt";
-    private static String outputFileName = "F:\\important\\bianyiyuanli\\txtfiles\\output.txt";
+    private String inputFileName;
+    private String outputFileName;
+    private Tokens tokens;
+
     private static String digitDFA[] = {
             "#d#####",
             "#d.#e##",//end
@@ -19,6 +20,13 @@ class Scan {
             "######d",
             "######d" //end
     };
+
+    Scan(String inputFileName,String outputFileName,String tokenFileName,String keyWordsFileName) throws IOException {
+        this.inputFileName = inputFileName;
+        this.outputFileName = outputFileName;
+        this.tokens = new Tokens(tokenFileName,keyWordsFileName);
+    }
+
     void readTxt() throws IOException {
         FileReader inputFile = new FileReader(inputFileName);
         inputBr = new BufferedReader(inputFile);
@@ -118,11 +126,9 @@ class Scan {
             nowChar = inputBr.read();
             tmpA = (char) nowChar;
         }
-        Token tmpT = new Token(1, word);
-        tokens.tokenArray.add(tmpT);
-        Chars tmpC = new Chars(1,word);
-        if (!tokens.StringInCArray(tmpC))
-            tokens.charArray.add(tmpC);
+
+        int CPlace=tokens.addChars(1,word);
+        tokens.addToken(1,""+CPlace);
     }
 
     private void recordNum(char a) throws IOException {
@@ -147,12 +153,10 @@ class Scan {
         }
         if (state == 1 || state == 3 || state == 6) {
             if(isFloat==0){
-                Token tmpT = new Token(2, word);
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(2,word);
             }
             else if(isFloat==1){
-                Token tmpT = new Token(3, word);
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(3,word);
             }
         }
         else{
@@ -191,14 +195,12 @@ class Scan {
             }
         }
         nowChar = inputBr.read();
-        Token tmpT = new Token(5, word);
-        tokens.tokenArray.add(tmpT);
+        tokens.addToken(5,word);
     }
 
     private void recordSym(char a, int n) throws IOException {
         String word = ""+a;
-        Token tmpT = new Token(n, word);
-        tokens.tokenArray.add(tmpT);
+        tokens.addToken(n,word);
         nowChar = inputBr.read();
     }
 
@@ -206,41 +208,34 @@ class Scan {
         nowChar = inputBr.read();
         if(a=='>'){
             if((char)nowChar=='='){
-                Token tmpT = new Token(34, ">=");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(34,">=");
                 nowChar = inputBr.read();
             }
             else{
-                Token tmpT = new Token(25, ">");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(25,">");
             }
         }
         if(a=='<'){
             if((char)nowChar=='='){
-                Token tmpT = new Token(35, "<=");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(35,"<=");
                 nowChar = inputBr.read();
             }
             else{
-                Token tmpT = new Token(26, "<");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(26,"<");
             }
         }
         if(a=='='){
             if((char)nowChar=='='){
-                Token tmpT = new Token(32, "==");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(32,"==");
                 nowChar = inputBr.read();
             }
             else{
-                Token tmpT = new Token(31, "=");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(31,"=");
             }
         }
         if(a=='!') {
             if ((char) nowChar == '=') {
-                Token tmpT = new Token(33, "!=");
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(33,"!=");
                 nowChar = inputBr.read();
             } else {
                 errorCode = 3;
@@ -269,14 +264,13 @@ class Scan {
             nowChar = inputBr.read();
         }
         int n = tokens.findKeyWords(word);
-        if(n==18){
+        if(n==19){
             exCode=1;
             return;
         }
         if(n==-1){
             if(word.equals("true")||word.equals("false")){
-                Token tmpT = new Token(4, word);
-                tokens.tokenArray.add(tmpT);
+                tokens.addToken(4,word);
             }
             else{
                 exCode = 2;
@@ -285,8 +279,7 @@ class Scan {
             }
         }
         else{
-            Token tmpT = new Token(n, word);
-            tokens.tokenArray.add(tmpT);
+            tokens.addToken(n,word);
         }
     }
 
