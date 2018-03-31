@@ -1,4 +1,6 @@
 begin
     float &f = 1e-1;
-    int &i = 0;
+    int &i = 0;fdfdf
+    int[] &i = 0;
+    *））（）
 end
