@@ -1,0 +1,53 @@
+#初始化语句：INIT
+#赋值语句：EVALUATION
+#条件语句：CONDITION
+#循环语句：CIRCULATION
+#数字运算语句：CALCULATION
+#布尔运算语句：BOOLCAL
+#输入输出语句：IO
+
+#代码块：SECTION
+#标识符：tag
+#数字：num
+#字符串：string
+#布尔常数：BOOL
+#算数运算符 CALCULATOR
+#布尔运算符 BOOLCALCULATOR
+#初始化符号：INITAG
+
+#执行
+SECTION -> SENTENCE SECTION
+SENTENCE -> INIT | CONDITION | CIRCULATION | CALCULATION | IO | EVALUATION
+
+#初始化
+INIT -> INITAG tag | INITAG EVALUATION
+
+#赋值语句
+EVALUATION -> tag = num | tag = string | tag = BOOL
+
+#条件语句
+CONDITION -> if ( BOOLCAL ) { SECTION } | if ( BOOLCAL ) { SECTION } else { SECTION }
+
+#循环语句
+CIRCULATION -> while ( BOOLCAL ) { SECTION }
+
+#数字运算语句
+CALCULATION -> CALCULATION CALCULATOR CALCULATION | ( CALCULATION ) | num | tag
+
+#布尔运算语句
+BOOLCAL -> BOOLCAL BOOLCACULATOR BOOLCAL | ( BOOLCAL ) | num | tag | BOOL
+
+#输入输出语句
+IO -> input ( SECTION ) | output ( SECTION )
+
+#运算符：
+CALCULATOR -> + | - | * | /
+
+#初始化符号：
+INITAG -> int | float | bool | string
+
+#布尔常数
+BOOL -> true | false
+
+#布尔运算符
+BOOLCALCULATOR -> and | or | > | < | == | != | >= | <=

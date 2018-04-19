@@ -11,12 +11,13 @@ public class Compiler {
     private void start() throws IOException {
         String[]Files = readConfig();
         Scan sc = new Scan(Files[0],Files[1],Files[2],Files[3]);
-        sc.readTxt();
-        sc.outPut();
+        //sc.outPut();
+        Grammer grammer = new Grammer(Files[4]);
+
     }
 
     private String[] readConfig() throws IOException {
-        String[]Files = new String[4];
+        String[]Files = new String[5];
         Properties prop = new Properties();
         InputStream in = getClass().getResourceAsStream("/compiler.conf");
         prop.load(in);
@@ -24,6 +25,7 @@ public class Compiler {
         Files[1] = prop.getProperty("outputFileName");
         Files[2] = prop.getProperty("tokenFileName");
         Files[3] = prop.getProperty("keyWordsFileName");
+        Files[4] = prop.getProperty("grammerFileName");
         return Files;
     }
 }

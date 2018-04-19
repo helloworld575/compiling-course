@@ -28,9 +28,10 @@ class Scan {
         this.errorMsg = new ErrorMsg();
         this.matchTokens = new Stack<>();
         this.matchTokens.push(new TokenMatch('\0', -1));
+        readTxt();
     }
 
-    void readTxt() throws IOException {
+    private void readTxt() throws IOException {
         FileReader inputFile = new FileReader(inputFileName);
         inputBr = new BufferedReader(inputFile);
         errorMsg.setExCode(programStart());
@@ -233,6 +234,7 @@ class Scan {
                 tokens.addToken(25, ">");
             }
         }
+
         if (a == '<') {
             if ((char) nowChar == '=') {
                 tokens.addToken(35, "<=");
