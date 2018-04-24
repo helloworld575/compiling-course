@@ -9,7 +9,8 @@ public class Grammer {
         mygrammer = new MyGrammer(filename);
     }
 
-    private Items closureI(Items I){                //对ArrayList[A→α.Bβ,a]
+    private Items closureI(Items J){                //对ArrayList[A→α.Bβ,a]
+        Items I = J.copyItems();
         while(true) {                               //循环直至I.itemSet大小不再改变
             int size = I.size;
             for (Item oneItem : I.itemSet) {        //遍历一个项目集合中的所有项目
@@ -24,7 +25,7 @@ public class Grammer {
                     String[] belta = secondLen>dot+1 ? Arrays.copyOfRange(second,dot+1,secondLen) : null;   //获取belta字符串集合
                     //接下来设置b
                     if(belta == null){
-                        b = new ArrayList<String>(Arrays.asList(new String[oneItem.a.size()]));
+                        b = new ArrayList<>(Arrays.asList(new String[oneItem.a.size()]));
                         Collections.copy(b,oneItem.a);
                     }
                     else {
@@ -56,7 +57,23 @@ public class Grammer {
     }
     private MyItems myItemsConstruction(){
         MyItems C = new MyItems();
-
+        Items firstSet = closureI(mygrammer.enterance);
+        C.add(firstSet);
+        while(true){
+            int setSize = 0;
+            for(Items i:C.itemCollection){
+                for(Item item : i.itemSet){
+                    Items gotoItem = gGoTo(i.itemSet,item.firstA);
+                    if(!(gotoItem==null)){
+                        C.add(gotoItem);
+                    }
+                }
+            }
+            if(C.itemCollection.size()==setSize){
+                break;
+            }
+        }
+        return C;
     }
 
 
@@ -102,7 +119,14 @@ class Item{
         this.firstA = firstA;
         this.secondA = secondA;
         this.dot = dot;
-        this.a = a;
+        this.a = copyArray(a);
+    }
+    private ArrayList<String> copyArray(ArrayList<String> I){
+        if(I==null)
+            return null;
+        ArrayList<String> ans = new ArrayList<>();
+        ans.addAll(I);
+        return ans;
     }
     boolean equals(Item i){
         return i.firstA.equals(firstA) && dot == i.dot && listEqual(i.secondA, secondA) && arrayEqual(a, i.a);
@@ -121,7 +145,7 @@ class Item{
     private boolean arrayEqual(ArrayList<String>a,ArrayList<String>b){
         int n1 = a.size();
         int n2 = b.size();
-        if(a!=b)
+        if(n1!=n2)
             return false;
         for(int i=0;i<n1;i++){
             if(!a.get(i).equals(b.get(i)))
@@ -132,23 +156,69 @@ class Item{
 }
 class Items{
     ArrayList<Item>itemSet;
+    HashMap<String,Item>itemMap;
     int size;
     Items(ArrayList<Item>I){
-        this.itemSet = I;
-        this.size = I.size();
+        if(I==null){
+            this.itemSet = new ArrayList<>();
+            this.size = 0;
+        }else {
+            this.itemSet = copyArray(I);
+            this.size = I.size();
+            for(Item i : this.itemSet){
+                this.itemMap.put(i.firstA,i);
+            }
+        }
     }
     boolean add(Item I){
-        for(Item i : itemSet){
+        for(Item i : this.itemSet){
             if(i.equals(I)){
                 return false;
             }
         }
-        itemSet.add(I);
+        this.itemMap.put(I.firstA,I);
+        this.itemSet.add(I);
+        this.size++;
         return true;
+    }
+    boolean itemsEqual(Items I){
+        if(!(I.size==this.size))
+            return false;
+        for(Item item:I.itemSet){
+            if(!(item.equals(this.itemMap.get(item.firstA))))
+                return false;
+        }
+        return true;
+    }
+    private ArrayList<Item> copyArray(ArrayList<Item> I){
+        ArrayList<Item> ans = new ArrayList<>();
+        for(Item item : I){
+            ans.add(new Item(item.firstA,item.secondA,item.dot,item.a));
+        }
+        return ans;
+    }
+    Items copyItems(){
+        return new Items(this.copyArray(this.itemSet));
     }
 }
 class MyItems{
     ArrayList<Items>itemCollection;
+    int size =0;
+    boolean add(Items items){
+        if(!inMyItems(items)){
+            this.itemCollection.add(items);
+            this.size++;
+            return true;
+        }
+        return false;
+    }
+    boolean inMyItems(Items myItems){
+        for(Items items:this.itemCollection){
+            if(items.itemsEqual(myItems))
+                return true;
+        }
+        return false;
+    }
 }
 class MyGrammerItem{
     String firstA;
@@ -161,15 +231,20 @@ class MyGrammerItem{
 }
 class MyGrammer{
     private ArrayList<MyGrammerItem>grammers = new ArrayList<>();
-    String[][] firstSet;
-    Map<String,String>grammerMap;
-    int Sum;
+    private String[][] firstSet;
+    private Map<String,String>grammerMap;
+    private int Sum;
+    Items enterance;
 
     MyGrammer(String filename) throws IOException {
         this.Sum = 0;
         this.grammerMap = new HashMap<>();
         this.readText(filename);
         this.firstSet = getFirstSet();
+        String[][] enteranceItem = {{"SECTION"},};
+        this.enterance = new Items(null);
+        String[] entranceStr = {"SECTION"};
+        this.enterance.add(new Item("S",entranceStr,0));
     }
 
     String[][] getSecondA(String firstA){
@@ -245,7 +320,7 @@ class MyGrammer{
     }
 
     ArrayList<String> first(String temp){
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<String> list = new ArrayList<>();
         list.addAll(Arrays.asList(firstSet[Integer.parseInt(grammerMap.get(temp))]));
         return list;
     }
